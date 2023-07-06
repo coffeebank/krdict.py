@@ -1,3 +1,4 @@
+aiohttp
+asyncio
 cssselect>=1.1.0
 lxml>=4.9.1 
-requests>=2.28.1
