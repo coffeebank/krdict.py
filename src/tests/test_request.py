@@ -3,51 +3,54 @@ Handles testing request logic.
 """
 
 import unittest
-import unittest.mock
+from unittest import mock
 import krdict
+import asyncio
 
 
-def _mock_request_get(*args, **kwargs): # pylint: disable=unused-argument
-    return unittest.mock.Mock(('raise_for_status',))
+async def _mock_request_get(*args, **kwargs):  # pylint: disable=unused-argument
+    response_mock = mock.Mock()
+    response_mock.raise_for_status = mock.AsyncMock()
+    return response_mock
 
 
-class KRDictRequestTest(unittest.TestCase):
+class KRDictRequestTest(unittest.IsolatedAsyncioTestCase):
     """Contains test cases for request logic."""
 
-    def setUp(self):
+    async def asyncSetUp(self):
         krdict.set_key('TEST_KEY')
         self.addCleanup(krdict.set_key, None)
 
-        request_patcher = unittest.mock.patch('requests.get', side_effect=_mock_request_get)
+        request_patcher = mock.patch('aiohttp.ClientSession.get', side_effect=_mock_request_get)
         self.addCleanup(request_patcher.stop)
 
         request_patcher.start()
 
-    def test_key(self):
+    async def test_key(self):
         """Provided API key is added to requests"""
 
         # an explicit provided key is used
-        _, params, _ = krdict.request.send_request({'key': 'PROVIDED_KEY'})
+        _, params, _ = await krdict.request.send_request({'key': 'PROVIDED_KEY'})
 
         self.assertIn('key', params)
         self.assertEqual(params['key'], 'PROVIDED_KEY')
 
         # the key set with set_key is used
-        _, params, _ = krdict.request.send_request({})
+        _, params, _ = await krdict.request.send_request({})
 
         self.assertIn('key', params)
         self.assertEqual(params['key'], 'TEST_KEY')
 
         # no key is supplied if the key is unset
         krdict.set_key(None)
-        _, params, _ = krdict.request.send_request({})
+        _, params, _ = await krdict.request.send_request({})
 
         self.assertNotIn('key', params)
 
-    def test_max_syllables(self):
+    async def test_max_syllables(self):
         """Setting max_syllables parameter sets default min_syllables"""
 
-        _, params, _ = krdict.request.send_request({'max_syllables': 5})
+        _, params, _ = await krdict.request.send_request({'max_syllables': 5})
 
         self.assertIn('letter_e', params)
         self.assertIn('letter_s', params)
@@ -55,10 +58,10 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['letter_e'], '5')
         self.assertEqual(params['letter_s'], '1')
 
-    def test_min_syllables(self):
+    async def test_min_syllables(self):
         """Setting min_syllables parameter sets default max_syllables"""
 
-        _, params, _ = krdict.request.send_request({'min_syllables': 10})
+        _, params, _ = await krdict.request.send_request({'min_syllables': 10})
 
         self.assertIn('letter_s', params)
         self.assertIn('letter_e', params)
@@ -66,10 +69,10 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['letter_s'], '10')
         self.assertEqual(params['letter_e'], '0')
 
-    def test_multiple_parameters(self):
+    async def test_multiple_parameters(self):
         """Lists of parameters are properly transformed"""
 
-        _, params, _ = krdict.request.send_request({
+        _, params, _ = await krdict.request.send_request({
             'part_of_speech': (krdict.PartOfSpeech.NOUN, krdict.PartOfSpeech.VERB),
             'translation_language': (
                 krdict.TranslationLanguage.ENGLISH,
@@ -90,10 +93,10 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['trans_lang'], '1,4,2')
         self.assertEqual(params['level'], 'level1,level2')
 
-    def test_parameter_transformation(self):
+    async def test_parameter_transformation(self):
         """Parameters to requests are properly transformed"""
 
-        _, params, _ = krdict.request.send_request({
+        _, params, _ = await krdict.request.send_request({
             'query': '나무',
             'page': 2,
             'per_page': 25,
@@ -143,10 +146,10 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['sense_cat'], '126')
         self.assertEqual(params['subject_cat'], '96')
 
-    def test_translated_flag(self):
+    async def test_translated_flag(self):
         """Setting a translation language sets the translated flag"""
 
-        _, params, _ = krdict.request.send_request({
+        _, params, _ = await krdict.request.send_request({
             'translation_language': krdict.TranslationLanguage.SPANISH
         })
 
@@ -156,11 +159,11 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['trans_lang'], '4')
         self.assertEqual(params['translated'], 'y')
 
-    def test_view(self):
+    async def test_view(self):
         """Parameters for view endpoint are properly transformed"""
 
         # target code query
-        _, params, search_type = krdict.request.send_request({'target_code': 32750}, False, 'view')
+        _, params, search_type = await krdict.request.send_request({'target_code': 32750}, False, 'view')
 
         self.assertEqual(search_type, 'view')
 
@@ -171,7 +174,7 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['method'], 'target_code')
 
         # default homograph number
-        _, params, search_type = krdict.request.send_request({'query': '나무'}, False, 'view')
+        _, params, search_type = await krdict.request.send_request({'query': '나무'}, False, 'view')
 
         self.assertEqual(search_type, 'view')
 
@@ -179,7 +182,7 @@ class KRDictRequestTest(unittest.TestCase):
         self.assertEqual(params['q'], '나무0')
 
         # provided homograph number
-        _, params, search_type = krdict.request.send_request({
+        _, params, search_type = await krdict.request.send_request({
             'query': '나무',
             'homograph_num': 1
         }, False, 'view')
