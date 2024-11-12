@@ -17,14 +17,9 @@ async def _mock_request_get(*args, **kwargs):  # pylint: disable=unused-argument
 class KRDictRequestTest(unittest.IsolatedAsyncioTestCase):
     """Contains test cases for request logic."""
 
-    async def asyncSetUp(self):
+    def setUp(self):
         krdict.set_key('TEST_KEY')
         self.addCleanup(krdict.set_key, None)
-
-        request_patcher = mock.patch('aiohttp.ClientSession.get', side_effect=_mock_request_get)
-        self.addCleanup(request_patcher.stop)
-
-        request_patcher.start()
 
     async def test_key(self):
         """Provided API key is added to requests"""
