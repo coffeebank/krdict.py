@@ -4,8 +4,8 @@ Handles testing request logic.
 
 import unittest
 from unittest import mock
-import krdict
 import asyncio
+import krdict
 
 
 async def _mock_request_get(*args, **kwargs):  # pylint: disable=unused-argument
