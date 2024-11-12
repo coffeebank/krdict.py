@@ -98,7 +98,6 @@ _PARAM_MAPS = {
     }
 }
 _DEFAULTS = { 'API_KEY': '' }
-_PEM_PATH = path.join(path.dirname(path.realpath(__file__)), 'korean-go-kr-chain.pem')
 
 
 def _map_value(mapper, value):
