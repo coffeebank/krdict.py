@@ -917,7 +917,7 @@ async def _read_response(*args):
     reader = readers.get(response_type, readers['_'])
 
     result, total = (
-        reader(doc, target_code, lang_info, kwargs)
+        await reader(doc, target_code, lang_info, kwargs)
         if response_type == 'view'
         else (
             reader(doc, lang_info)
