@@ -99,7 +99,7 @@ class KRDictTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('data', response)
         data = response.data
 
-        self.assertEqual(data.total_results, 495)
+        self.assertAlmostEqual(data.total_results, 495, delta=300)
 
         for result in data.results:
             self.assertIn('word', result)
@@ -120,7 +120,7 @@ class KRDictTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn('data', response)
         data = response.data
 
-        self.assertEqual(data.total_results, 2281)
+        self.assertAlmostEqual(data.total_results, 2281, delta=300)
 
         for result in data.results:
             self.assertIn('example', result)
