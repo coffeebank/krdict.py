@@ -4,6 +4,7 @@ Handles testing the main module.
 
 import os
 import unittest
+import asyncio
 import krdict
 
 try:
@@ -14,15 +15,15 @@ except ImportError:
 
 _BASE_VIEW_URL = 'https://krdict.korean.go.kr/kor/dicSearch/SearchView?ParaWordNo={}'
 
-class KRDictTest(unittest.TestCase):
+class KRDictTest(unittest.IsolatedAsyncioTestCase):
     """Contains test cases for the main module."""
 
-    def setUp(self):
+    async def asyncSetUp(self):
         krdict.set_key(os.getenv('KRDICT_KEY'))
 
-    def test_api_error(self):
+    async def test_api_error(self):
         """Invalid query string results in an API error"""
-        response = krdict.search(query='')
+        response = await krdict.search(query='')
         self.assertIn('error_code', response)
         self.assertIn('message', response)
         self.assertIn('request_params', response)
@@ -34,9 +35,9 @@ class KRDictTest(unittest.TestCase):
         self.assertEqual(response.error_code, 100)
         self.assertEqual(response.message, 'Incorrect query request')
 
-    def test_basic_search(self):
+    async def test_basic_search(self):
         """Basic search query returns proper results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.WORD,
             raise_api_errors=True
@@ -84,9 +85,9 @@ class KRDictTest(unittest.TestCase):
                 self.assertIn('order', def_info)
                 self.assertEqual(def_info.order, index + 1)
 
-    def test_definition_search(self):
+    async def test_definition_search(self):
         """Definition search query returns proper results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.DEFINITION,
             raise_api_errors=True
@@ -105,9 +106,9 @@ class KRDictTest(unittest.TestCase):
             self.assertIn('definition_info', result)
             self.assertIn('definition', result.definition_info)
 
-    def test_example_search(self):
+    async def test_example_search(self):
         """Example search query returns proper results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.EXAMPLE,
             raise_api_errors=True
@@ -124,9 +125,9 @@ class KRDictTest(unittest.TestCase):
         for result in data.results:
             self.assertIn('example', result)
 
-    def test_idiom_proverb_search(self):
+    async def test_idiom_proverb_search(self):
         """Idiom/Proverb search query returns proper results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.IDIOM_PROVERB,
             raise_api_errors=True
@@ -143,9 +144,9 @@ class KRDictTest(unittest.TestCase):
         for result in data.results:
             self.assertIn('word', result)
 
-    def test_page(self):
+    async def test_page(self):
         """Setting page parameter returns proper page"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.WORD,
             page=2,
@@ -157,9 +158,9 @@ class KRDictTest(unittest.TestCase):
 
         self.assertEqual(data.page, 2)
 
-    def test_per_page(self):
+    async def test_per_page(self):
         """Setting per_page parameter returns correct number of results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.WORD,
             per_page=15,
@@ -172,22 +173,22 @@ class KRDictTest(unittest.TestCase):
         self.assertEqual(data.per_page, 15)
         self.assertEqual(len(data.results), 15)
 
-    def test_raise_api_errors(self):
+    async def test_raise_api_errors(self):
         """Invalid query string with raise_api_errors=True raises"""
         with self.assertRaises(krdict.KRDictException) as ctx:
-            krdict.search(query='', raise_api_errors=True)
+            await krdict.search(query='', raise_api_errors=True)
         self.assertIsInstance(ctx.exception.request_params, dict)
         self.assertEqual(ctx.exception.error_code, 100)
         self.assertEqual(ctx.exception.message, 'Incorrect query request')
 
-    def test_search_method(self):
+    async def test_search_method(self):
         """Advanced search with various search methods returns proper results"""
-        response = krdict.advanced_search(query='나무', raise_api_errors=True)
+        response = await krdict.advanced_search(query='나무', raise_api_errors=True)
         self.assertIn('data', response)
         self.assertEqual(response.data.total_results, 1)
         self.assertEqual(response.data.results[0].target_code, 32750)
 
-        response = krdict.advanced_search(
+        response = await krdict.advanced_search(
             query='나무',
             search_method=krdict.SearchMethod.START,
             raise_api_errors=True
@@ -196,7 +197,7 @@ class KRDictTest(unittest.TestCase):
         self.assertIn('data', response)
         self.assertEqual(response.data.total_results, 17)
 
-        response = krdict.advanced_search(
+        response = await krdict.advanced_search(
             query='나무',
             search_method=krdict.SearchMethod.END,
             raise_api_errors=True
@@ -205,9 +206,9 @@ class KRDictTest(unittest.TestCase):
         self.assertIn('data', response)
         self.assertEqual(response.data.total_results, 33)
 
-    def test_sort(self):
+    async def test_sort(self):
         """Setting sort parameter to popular returns sorted results"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.WORD,
             sort=krdict.SortMethod.POPULAR,
@@ -221,9 +222,9 @@ class KRDictTest(unittest.TestCase):
         self.assertEqual(data.results[1].target_code, 38842)
         self.assertEqual(data.results[2].target_code, 38847)
 
-    def test_translation(self):
+    async def test_translation(self):
         """Setting translation_language parameter returns results with translations"""
-        response = krdict.search(
+        response = await krdict.search(
             query='나무',
             search_type=krdict.SearchType.WORD,
             raise_api_errors=True,
@@ -258,9 +259,9 @@ class KRDictTest(unittest.TestCase):
                 self.assertIn('language', jpn_translation)
                 self.assertEqual(jpn_translation.language, '일본어')
 
-    def test_view(self):
+    async def test_view(self):
         """Basic view query returns proper results"""
-        response = krdict.view(target_code=32750, raise_api_errors=True)
+        response = await krdict.view(target_code=32750, raise_api_errors=True)
 
         self.assertIn('response_type', response)
         self.assertEqual(response.response_type, 'view')
@@ -281,9 +282,9 @@ class KRDictTest(unittest.TestCase):
         self.assertIn('definition_info', word_info)
         self.assertEqual(len(word_info.definition_info), 3)
 
-    def test_view_word_info(self):
+    async def test_view_word_info(self):
         """Basic view query with word info returns proper results"""
-        response = krdict.view(query='나무', raise_api_errors=True)
+        response = await krdict.view(query='나무', raise_api_errors=True)
 
         self.assertIn('response_type', response)
         self.assertEqual(response.response_type, 'view')
