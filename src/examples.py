@@ -5,7 +5,7 @@ Contains potential usage examples of the library.
 from functools import reduce
 import os
 import sys
-import requests
+import asyncio
 import krdict
 
 try:
@@ -93,7 +93,7 @@ def _display_results(response):
 
 
 # Example 1
-def pagination():
+async def pagination():
     """
     Collects results from multiple API calls using pagination.
     """
@@ -104,7 +104,7 @@ def pagination():
     total_results = 0
 
     while has_next:
-        response = krdict.search(query='나무', page=page, per_page=20, raise_api_errors=True)
+        response = await krdict.search(query='나무', page=page, per_page=20, raise_api_errors=True)
         data = response.data
         total_results = data.total_results
 
@@ -118,12 +118,12 @@ def pagination():
     print(f'{len(results)} results collected. Total results: {total_results}.')
 
 # Example 2
-def search_definitions():
+async def search_definitions():
     """
     Performs a search for definitions containing the word 나무.
     """
 
-    response = krdict.search(
+    response = await krdict.search(
         query='나무',
         # if you're using type checking,
         # setting the search_type parameter in a call with
@@ -138,12 +138,12 @@ def search_definitions():
     _display_results(response)
 
 # Example 3
-def search_examples():
+async def search_examples():
     """
     Performs a search for examples containing the word 나무.
     """
 
-    response = krdict.search(
+    response = await krdict.search(
         query='나무',
         search_type=krdict.SearchType.EXAMPLE,
         raise_api_errors=True
@@ -153,12 +153,12 @@ def search_examples():
         print(f'• {result.example} (Word: {result.word})')
 
 # Example 4
-def search_idioms():
+async def search_idioms():
     """
     Performs a search for idioms and proverbs containing the word 나무.
     """
 
-    response = krdict.search(
+    response = await krdict.search(
         query='나무',
         search_type=krdict.SearchType.IDIOM_PROVERB,
         translation_language=krdict.TranslationLanguage.ENGLISH,
@@ -168,12 +168,12 @@ def search_idioms():
     _display_results(response)
 
 # Example 5
-def search_beginner_words_with_multimedia():
+async def search_beginner_words_with_multimedia():
     """
     Displays the first 10 results which are beginner grade words and contain multimedia.
     """
 
-    response = krdict.advanced_search(
+    response = await krdict.advanced_search(
         # the API lacks a supported way to search without a query,
         # but because most definitions contain a period, it's possible to
         # achieve near-perfect results using the query '.' and the 'definition'
@@ -200,12 +200,12 @@ def search_beginner_words_with_multimedia():
     _display_results(response)
 
 # Example 6
-def search_words_with_hanja():
+async def search_words_with_hanja():
     """
     Displays the first 10 results which contain the 한자 機.
     """
 
-    response = krdict.advanced_search(
+    response = await krdict.advanced_search(
         query='機',
         search_type=krdict.SearchType.WORD,
         search_target=krdict.SearchTarget.ORIGINAL_LANGUAGE,
@@ -217,12 +217,12 @@ def search_words_with_hanja():
     _display_results(response)
 
 # Example 7
-def view_query():
+async def view_query():
     """
     Displays the results of a view query for the word 단풍나무.
     """
 
-    response = krdict.view(
+    response = await krdict.view(
         query='단풍나무',
         # the homograph_num parameter defaults to 0.
         # it is included here for completeness.
@@ -241,12 +241,12 @@ def view_query():
     _display_results(response)
 
 # Example 8
-def scraped_view_query():
+async def scraped_view_query():
     """
     Displays the results of a scraped view query for the word 단풍나무.
     """
 
-    response = krdict.scraper.view(
+    response = await krdict.scraper.view(
         # scraper method can only query with target code, not query strings
         target_code=42075,
         translation_language=krdict.TranslationLanguage.ENGLISH,
@@ -256,12 +256,12 @@ def scraped_view_query():
     _display_results(response)
 
 # Example 9
-def word_of_the_day():
+async def word_of_the_day():
     """
     Fetches the word of the day, then fetches extended information using the result.
     """
 
-    wotd_response = krdict.scraper.fetch_word_of_the_day(
+    wotd_response = await krdict.scraper.fetch_word_of_the_day(
         translation_language=krdict.TranslationLanguage.ENGLISH
     )
 
@@ -271,9 +271,9 @@ def word_of_the_day():
 
     print((f'Word of the Day: {wotd_response.data.word}{wotd_translation}'
         f'\n{wotd_response.data.definition}'
-        f'\n{wotd_response.data.url}'))
+        f'\n{wotd_response.data.translation_urls[0].url}'))
 
-    response = krdict.scraper.view(
+    response = await krdict.scraper.view(
         # with the target code from the scraped word of the day response,
         # we can use the scraper to get extended information.
         target_code=wotd_response.data.target_code,
@@ -285,12 +285,12 @@ def word_of_the_day():
     _display_results(response)
 
 # Example 10
-def fetch_semantic_category():
+async def fetch_semantic_category():
     """
     Fetches words in the 인간 > 신체 부위 semantic category.
     """
 
-    response = krdict.scraper.fetch_semantic_category_words(
+    response = await krdict.scraper.fetch_semantic_category_words(
         # equivalent: category=3,
         # equivalent: category='인간 > 신체 부위',
         # equivalent: category='human > body parts',
@@ -301,12 +301,12 @@ def fetch_semantic_category():
     _display_results(response)
 
 # Example 11
-def fetch_subject_category():
+async def fetch_subject_category():
     """
     Fetches words in the 인사하기 subject category.
     """
 
-    response = krdict.scraper.fetch_subject_category_words(
+    response = await krdict.scraper.fetch_subject_category_words(
         # category also accepts an array of multiple categories,
         # or krdict.SubjectCategory.ALL to retrieve all categories' words.
 
@@ -320,13 +320,13 @@ def fetch_subject_category():
     _display_results(response)
 
 # Example 12
-def hanja_info():
+async def hanja_info():
     """
     Displays information about hanja in a
     scraped view response.
     """
 
-    response = krdict.scraper.view(
+    response = await krdict.scraper.view(
         target_code=14951 # target code for 가감승제
     )
 
@@ -367,7 +367,7 @@ _EXAMPLE_FUNCS = [
     hanja_info
 ]
 
-def _run_examples():
+async def _run_examples():
     pad = '═' * 39
     pad_line = '═' * 90
 
@@ -375,7 +375,7 @@ def _run_examples():
         print(f'{pad} Example {idx+1:02d} {pad}')
         print(example_func.__doc__)
 
-        example_func()
+        await example_func()
         print()
 
     print(pad_line)
@@ -383,6 +383,6 @@ def _run_examples():
 
 if __name__ == '__main__':
     try:
-        _run_examples()
+        asyncio.run(_run_examples())
     except (krdict.KRDictException, requests.RequestException) as exc:
         sys.exit(str(exc))

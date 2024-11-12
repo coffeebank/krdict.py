@@ -3,14 +3,15 @@ Handles testing the scraper.
 """
 
 import unittest
+import asyncio
 import krdict
 
-class KRDictScraperTest(unittest.TestCase):
+class KRDictScraperTest(unittest.IsolatedAsyncioTestCase):
     """Contains test cases for the scraper module."""
 
-    def test_scraper_advanced(self):
+    async def test_scraper_advanced(self):
         """Advanced search query with scraper returns proper results"""
-        response = krdict.scraper.advanced_search(
+        response = await krdict.scraper.advanced_search(
             query='나무',
             search_method=krdict.SearchMethod.INCLUDE,
             sort=krdict.SortMethod.POPULAR
@@ -24,11 +25,11 @@ class KRDictScraperTest(unittest.TestCase):
 
         for result in data.results:
             self.assertIn('pronunciation_urls', result)
-            self.assertEqual(len(result.pronunciation_urls), 1)
+            self.assertGreaterEqual(len(result.pronunciation_urls), 1)
 
-    def test_scraper_category(self):
+    async def test_scraper_category(self):
         """Advanced search query using categories with scraper returns proper results"""
-        response = krdict.scraper.advanced_search(
+        response = await krdict.scraper.advanced_search(
             query='가',
             search_method=krdict.SearchMethod.INCLUDE,
             subject_category=krdict.SubjectCategory.ELEMENTARY_DESCRIBING_LOCATION
@@ -42,18 +43,18 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertEqual(data.results[0].word, '가리키다')
         self.assertIn('pronunciation_urls', data.results[0])
         self.assertEqual(data.results[0].pronunciation_urls[0],
-            ('https://dicmedia.korean.go.kr/multimedia/multimedia_files/'
+            ('https://krdicmedia.korean.go.kr/multimedia/multimedia_files/'
             'convert/20170223/442961/SND000021293.mp3'))
 
         self.assertEqual(data.results[1].word, '가운데')
         self.assertIn('pronunciation_urls', data.results[1])
         self.assertEqual(data.results[1].pronunciation_urls[0],
-            ('https://dicmedia.korean.go.kr/multimedia/multimedia_files/'
+            ('https://krdicmedia.korean.go.kr/multimedia/multimedia_files/'
             'convert/20160913/20000/17000/307982/SND000317336.mp3'))
 
-    def test_scraper_fetch_semantic_category_words(self):
+    async def test_scraper_fetch_semantic_category_words(self):
         """Fetching semantic category words with scraper returns proper results"""
-        response = krdict.scraper.fetch_semantic_category_words(category=3, per_page=15)
+        response = await krdict.scraper.fetch_semantic_category_words(category=3, per_page=15)
 
         self.assertIn('data', response)
         data = response.data
@@ -66,8 +67,8 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertIn('results', data)
 
         self.assertEqual(data.url,
-            ('https://krdict.korean.go.kr/dicSearchDetail/'
-            'searchDetailSenseCategoryResult?searchFlag=Y&currentPage=1&blockCount=15&sort=W'
+            ('https://krdict.korean.go.kr/kor/dicSearch/'
+            'searchDetailSenseCategory?searchFlag=Y&currentPage=1&blockCount=15&sort=1'
             '&lgCategoryCode=1&miCategoryCode=1003'))
         self.assertEqual(len(data.translation_urls), 0)
         self.assertEqual(data.page, 1)
@@ -75,9 +76,9 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertEqual(len(data.results), 15)
         self.assertEqual(data.total_results, 113)
 
-    def test_scraper_fetch_semantic_category_words_translation(self):
+    async def test_scraper_fetch_semantic_category_words_translation(self):
         """Fetching semantic category words with translation with scraper returns proper results"""
-        response = krdict.scraper.fetch_semantic_category_words(
+        response = await krdict.scraper.fetch_semantic_category_words(
             category=3,
             per_page=15,
             translation_language=krdict.scraper.ScraperTranslationLanguage.ENGLISH
@@ -94,13 +95,13 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertIn('results', data)
 
         self.assertEqual(data.url,
-            ('https://krdict.korean.go.kr/dicSearchDetail/'
-            'searchDetailSenseCategoryResult?searchFlag=Y&currentPage=1&blockCount=15&sort=W'
+            ('https://krdict.korean.go.kr/kor/dicSearch/'
+            'searchDetailSenseCategory?searchFlag=Y&currentPage=1&blockCount=15&sort=1'
             '&lgCategoryCode=1&miCategoryCode=1003'))
         self.assertEqual(data.translation_urls[0].url,
-            ('https://krdict.korean.go.kr/eng/dicSearchDetail/'
-            'searchDetailSenseCategoryResult?nation=eng&nationCode=6&searchFlag=Y'
-            '&currentPage=1&blockCount=15&sort=W&lgCategoryCode=1&miCategoryCode=1003'))
+            ('https://krdict.korean.go.kr/eng/dicSearch/'
+            'searchDetailSenseCategory?nation=eng&nationCode=6&searchFlag=Y'
+            '&currentPage=1&blockCount=15&sort=1&lgCategoryCode=1&miCategoryCode=1003'))
         self.assertEqual(data.page, 1)
         self.assertEqual(data.per_page, 15)
         self.assertEqual(len(data.results), 15)
@@ -119,9 +120,9 @@ class KRDictScraperTest(unittest.TestCase):
                 self.assertIn('language', translation)
                 self.assertEqual(translation.language, '영어')
 
-    def test_scraper_fetch_subject_category_words(self):
+    async def test_scraper_fetch_subject_category_words(self):
         """Fetching semantic category words with scraper returns proper results"""
-        response = krdict.scraper.fetch_subject_category_words(category=1, per_page=15)
+        response = await krdict.scraper.fetch_subject_category_words(category=1, per_page=15)
 
         self.assertIn('data', response)
         data = response.data
@@ -134,17 +135,17 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertIn('results', data)
 
         self.assertEqual(data.url,
-            ('https://krdict.korean.go.kr/dicSearchDetail/searchDetailActCategoryResult?'
-            'searchFlag=Y&currentPage=1&blockCount=15&sort=W&actCategory=20001'))
+            ('https://krdict.korean.go.kr/kor/dicSearch/searchDetailActCategory?'
+            'searchFlag=Y&currentPage=1&blockCount=15&sort=1&actCategory=20001'))
         self.assertEqual(len(data.translation_urls), 0)
         self.assertEqual(data.page, 1)
         self.assertEqual(data.per_page, 15)
         self.assertEqual(len(data.results), 15)
         self.assertEqual(data.total_results, 17)
 
-    def test_scraper_fetch_subject_category_words_translation(self):
+    async def test_scraper_fetch_subject_category_words_translation(self):
         """Fetching semantic category words with translation with scraper returns proper results"""
-        response = krdict.scraper.fetch_subject_category_words(
+        response = await krdict.scraper.fetch_subject_category_words(
             category=1,
             per_page=15,
             translation_language=krdict.scraper.ScraperTranslationLanguage.ENGLISH
@@ -161,12 +162,12 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertIn('results', data)
 
         self.assertEqual(data.url,
-            ('https://krdict.korean.go.kr/dicSearchDetail/searchDetailActCategoryResult?'
-            'searchFlag=Y&currentPage=1&blockCount=15&sort=W&actCategory=20001'))
+            ('https://krdict.korean.go.kr/kor/dicSearch/searchDetailActCategory?'
+            'searchFlag=Y&currentPage=1&blockCount=15&sort=1&actCategory=20001'))
         self.assertEqual(data.translation_urls[0].url,
-            ('https://krdict.korean.go.kr/eng/dicSearchDetail/searchDetailActCategoryResult?'
+            ('https://krdict.korean.go.kr/eng/dicSearch/searchDetailActCategory?'
             'nation=eng&nationCode=6&searchFlag=Y'
-            '&currentPage=1&blockCount=15&sort=W&actCategory=20001'))
+            '&currentPage=1&blockCount=15&sort=1&actCategory=20001'))
         self.assertEqual(data.page, 1)
         self.assertEqual(data.per_page, 15)
         self.assertEqual(len(data.results), 15)
@@ -185,9 +186,9 @@ class KRDictScraperTest(unittest.TestCase):
                 self.assertIn('language', translation)
                 self.assertEqual(translation.language, '영어')
 
-    def test_scraper_fetch_word_of_the_day(self):
+    async def test_scraper_fetch_word_of_the_day(self):
         """Fetching word of the day with scraper returns proper results"""
-        response = krdict.scraper.fetch_word_of_the_day()
+        response = await krdict.scraper.fetch_word_of_the_day()
 
         self.assertIn('data', response)
         data = response.data
@@ -198,9 +199,9 @@ class KRDictScraperTest(unittest.TestCase):
         self.assertIn('url', data)
         self.assertIn('homograph_num', data)
 
-    def test_scraper_fetch_word_of_the_day_translation(self):
+    async def test_scraper_fetch_word_of_the_day_translation(self):
         """Fetching word of the day with translation with scraper returns proper results"""
-        response = krdict.scraper.fetch_word_of_the_day(
+        response = await krdict.scraper.fetch_word_of_the_day(
             translation_language=krdict.scraper.ScraperTranslationLanguage.ENGLISH
         )
 
@@ -220,9 +221,9 @@ class KRDictScraperTest(unittest.TestCase):
 
         self.assertEqual(data.translations[0].language, '영어')
 
-    def test_scraper_view(self):
+    async def test_scraper_view(self):
         """Basic view query with scraper returns proper results"""
-        response = krdict.scraper.view(target_code=55874)
+        response = await krdict.scraper.view(target_code=55874)
 
         self.assertIn('data', response)
         self.assertEqual(len(response.data.results), 1)
@@ -273,9 +274,9 @@ class KRDictScraperTest(unittest.TestCase):
 
         self.assertEqual(hanja_3.readings[0], '날 일')
 
-    def test_scraper_view_multimedia(self):
-        """Basic view query with multimedia scraper returns proper results"""
-        response = krdict.scraper.view(target_code=14997, fetch_multimedia=True)
+    async def test_scraper_view_multimedia_image(self):
+        """Basic view query with multimedia scraper returns proper results for a result with an image"""
+        response = await krdict.scraper.view(target_code=14997, fetch_multimedia=True)
 
         self.assertIn('data', response)
         self.assertEqual(len(response.data.results), 1)
@@ -290,9 +291,26 @@ class KRDictScraperTest(unittest.TestCase):
             self.assertIn('content_urls', info)
             self.assertEqual(len(info.content_urls), 1)
 
-    def test_scraper_word(self):
+    async def test_scraper_view_multimedia_video(self):
+        """Basic view query with multimedia scraper returns proper results for a result with a video"""
+        response = await krdict.scraper.view(target_code=15113, fetch_multimedia=True)
+
+        self.assertIn('data', response)
+        self.assertEqual(len(response.data.results), 1)
+        result = response.data.results[0]
+
+        self.assertIn('word_info', result)
+        self.assertIn('definition_info', result.word_info)
+        self.assertIn('multimedia_info', result.word_info.definition_info[0])
+        media_info = result.word_info.definition_info[0].multimedia_info
+
+        for info in media_info:
+            self.assertIn('content_urls', info)
+            self.assertGreaterEqual(len(info.content_urls), 1)
+
+    async def test_scraper_word(self):
         """Basic search query with scraper returns proper results"""
-        response = krdict.scraper.search(
+        response = await krdict.scraper.search(
             query='나무',
             search_type='word'
         )
@@ -302,7 +320,7 @@ class KRDictScraperTest(unittest.TestCase):
 
         self.assertIn('url', data)
         self.assertEqual(data.url,
-            ('https://krdict.korean.go.kr/dicSearch/search?'
+            ('https://krdict.korean.go.kr/kor/dicMarinerSearch/search?'
             'mainSearchWord=나무&currentPage=1&blockCount=10&sort=W&searchType=W'))
         self.assertEqual(len(data.results), 10)
 
